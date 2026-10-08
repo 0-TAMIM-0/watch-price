@@ -1,0 +1,95 @@
+version: "3.9"
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: watchprice-db
+    environment:
+      POSTGRES_USER: watchprice
+      POSTGRES_PASSWORD: watchprice
+      POSTGRES_DB: watchprice
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U watchprice -d watchprice"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - watchprice-network
+
+
+  # Flask Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: watchprice-backend
+    environment:
+      DATABASE_URL: postgresql://watchprice:watchprice@postgres:5432/watchprice
+      FLASK_ENV: development
+      SECRET_KEY: dev-secret-key
+    ports:
+      - "5000:5000"
+    volumes:
+      # Development: code changes auto-reload
+      - ./backend/app:/app/app
+      - ./backend/run.py:/app/run.py
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - watchprice-network
+    command: python run.py
+
+
+  # Price Watcher Worker
+  worker:
+    build:
+      context: ./worker
+      dockerfile: Dockerfile
+    container_name: watchprice-worker
+    environment:
+      DATABASE_URL: postgresql://watchprice:watchprice@postgres:5432/watchprice
+      CHECK_INTERVAL_MINUTES: 1
+    volumes:
+      # Development: code changes auto-reload
+      - ./worker/config.py:/app/config.py
+      - ./worker/price_simulator.py:/app/price_simulator.py
+      - ./worker/worker.py:/app/worker.py
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - watchprice-network
+
+
+# Vue Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: watchprice-frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/index.html:/app/index.html
+      - ./frontend/vite.config.ts:/app/vite.config.ts
+    depends_on:
+      - backend
+    networks:
+      - watchprice-network
+
+
+volumes:
+  postgres_data:
+    driver: local
+
+
+networks:
+  watchprice-network:
+    driver: bridge
