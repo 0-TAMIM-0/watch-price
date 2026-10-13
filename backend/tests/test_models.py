@@ -1,4 +1,7 @@
-from app.models import Product, PriceHistory
+import time
+from datetime import datetime
+
+from app.models import Product, PriceHistory, to_iso_utc
 
 
 class TestProductModel:
@@ -104,6 +107,33 @@ class TestProductModel:
         assert db_session.get(Product, product_id) is None
         assert db_session.get(PriceHistory, history_id) is None
 
+    # ---------- Regression tests: timestamps ----------
+
+    def test_timestamps_are_evaluated_per_row(self, db_session):
+        """Regression: default must be evaluated on each INSERT, not at import."""
+        product1 = Product(name="A", target_price=1, current_price=2)
+        db_session.add(product1)
+        db_session.commit()
+
+        time.sleep(0.01)
+
+        product2 = Product(name="B", target_price=1, current_price=2)
+        db_session.add(product2)
+        db_session.commit()
+
+        assert product2.created_at > product1.created_at
+
+    def test_to_dict_timestamps_are_utc_aware(self, db_session):
+        """created_at must be serialized with an explicit UTC offset."""
+        product = Product(name="TZ", target_price=1, current_price=2)
+        db_session.add(product)
+        db_session.commit()
+
+        iso = product.to_dict()["created_at"]
+
+        assert iso.endswith("+00:00")
+        assert datetime.fromisoformat(iso).tzinfo is not None
+
 
 class TestPriceHistoryModel:
     """Test suite for PriceHistory model"""
@@ -169,3 +199,23 @@ class TestPriceHistoryModel:
         assert len(product.price_history) == 4
         assert product.price_history[0].price == 200
         assert product.price_history[-1].price == 170
+
+
+class TestToIsoUtc:
+    """Test suite for the to_iso_utc helper"""
+
+    def test_none_returns_none(self):
+        assert to_iso_utc(None) is None
+
+    def test_naive_datetime_is_treated_as_utc(self):
+        naive = datetime(2026, 10, 12, 12, 0, 0)
+
+        assert to_iso_utc(naive) == "2026-10-12T12:00:00+00:00"
+
+    def test_aware_datetime_is_converted_to_utc(self):
+        from datetime import timezone, timedelta
+
+        berlin = timezone(timedelta(hours=2))
+        aware = datetime(2026, 10, 12, 14, 0, 0, tzinfo=berlin)
+
+        assert to_iso_utc(aware) == "2026-10-12T12:00:00+00:00"

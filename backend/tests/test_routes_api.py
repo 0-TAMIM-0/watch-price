@@ -45,14 +45,15 @@ class TestProductRoutes:
             target_price=800,
             current_price=999
         )
+        db_session.add(product1)
+        db_session.commit()
+
         product2 = Product(
             name="MacBook Pro",
             category="Computers",
             target_price=1500,
             current_price=2499
         )
-
-        db_session.add(product1)
         db_session.add(product2)
         db_session.commit()
 
@@ -61,8 +62,30 @@ class TestProductRoutes:
         assert response.status_code == 200
         data = json.loads(response.data)
         assert len(data) == 2
-        assert data[0]["name"] == "iPhone 15"
-        assert data[1]["name"] == "MacBook Pro"
+        assert [p["name"] for p in data] == ["MacBook Pro", "iPhone 15"]
+
+    def test_add_product_creates_initial_history(self, client, db_session):
+        """A new product must start with exactly one history record
+        holding its initial price (regression test)."""
+        response = client.post(
+            "/api/products",
+            data=json.dumps({"name": "History Product",
+                            "target_price": 100.0, "current_price": 150.0}),
+            content_type="application/json"
+        )
+        created = json.loads(response.data)
+
+        data = json.loads(client.get(f"/api/products/{created['id']}").data)
+
+        assert len(data["price_history"]) == 1
+        assert data["price_history"][0]["price"] == 150.0
+
+    def test_add_product_missing_fields_creates_no_history(self, client, db_session):
+        """A rejected request must not leave orphan history rows behind."""
+        client.post("/api/products", data=json.dumps({"name": "No Price"}),
+                    content_type="application/json")
+
+        assert db_session.query(PriceHistory).count() == 0
 
     def test_get_product_with_history(self, client, db_session):
         """Test getting a product with price history"""

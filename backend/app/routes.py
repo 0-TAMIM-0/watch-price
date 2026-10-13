@@ -2,6 +2,7 @@ from flask import Blueprint, jsonify, request, abort
 from app import db
 from app.models import Product, PriceHistory
 
+
 api = Blueprint("api", __name__, url_prefix="/api")
 
 # Separate blueprint for health checks (without /api prefix)
@@ -42,6 +43,10 @@ def add_product():
         image_url=data.get("image_url"),
         target_price=data["target_price"],
         current_price=data["current_price"]
+    )
+
+    product.price_history.append(
+        PriceHistory(price=data["current_price"])
     )
     db.session.add(product)
     db.session.commit()

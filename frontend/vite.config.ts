@@ -6,6 +6,11 @@ import { fileURLToPath } from 'url'
 export default defineConfig({
   plugins: [vue()],
 
+  server: {
+    host: true,
+    watch: { usePolling: true },   // required on Windows + Docker, otherwise file changes are not detected
+  },
+
   resolve: {
     alias: [
       {
