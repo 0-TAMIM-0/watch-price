@@ -1,0 +1,63 @@
+name: Backend CI                      # Name shown in the Actions tab
+
+on:
+  push:
+    branches: [main]                  # Run on every push to main...
+    paths:                            # ...but only if one of these changed
+      - "backend/**"
+      - ".github/workflows/backend.yml"
+  pull_request:
+    branches: [main]                  # Run on PRs targeting main
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend.yml"
+
+permissions:
+  contents: read                      # Read-only token (least privilege)
+
+concurrency:
+  group: backend-${{ github.ref }}    # One queue per branch
+  cancel-in-progress: true            # A new push cancels the older run
+
+jobs:
+  quality:
+    runs-on: ubuntu-24.04             # Pinned OS version (no surprise upgrades)
+    defaults:
+      run:
+        working-directory: backend    # All `run` steps execute inside backend/
+    steps:
+      - uses: actions/checkout@v4     # Download the repo code
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"      # Same version as the Dockerfile
+          cache: pip                  # Cache downloaded packages between runs
+          cache-dependency-path: backend/requirements.txt  # Refresh cache when this file changes
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt ruff pip-audit  # App deps + lint and security tools
+
+      - name: Lint
+        run: ruff check .             # Finds bugs and bad patterns (unused imports, etc.)
+
+      - name: Format check
+        run: ruff format --check .    # Fails if code is not formatted (does not modify files)
+
+      - name: Tests
+        run: pytest                   # Coverage threshold (80%) is set in pytest.ini
+
+      - name: Dependency audit
+        run: pip-audit -r requirements.txt  # Fails on known vulnerabilities in dependencies
+
+  docker:
+    needs: quality                    # Only runs if the quality job passed
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3   # Modern Docker builder (needed for caching)
+      - uses: docker/build-push-action@v6
+        with:
+          context: ./backend          # Folder that contains the Dockerfile
+          push: false                 # Build only, do not publish the image
+          cache-from: type=gha        # Reuse image layers cached in GitHub
+          cache-to: type=gha,mode=max # Save all layers for the next run

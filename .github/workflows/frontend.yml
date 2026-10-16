@@ -1,0 +1,60 @@
+name: Frontend CI                     # Name shown in the Actions tab
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "frontend/**"
+      - ".github/workflows/frontend.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "frontend/**"
+      - ".github/workflows/frontend.yml"
+
+permissions:
+  contents: read                      # Read-only token (least privilege)
+
+concurrency:
+  group: frontend-${{ github.ref }}   # One queue per branch
+  cancel-in-progress: true            # A new push cancels the older run
+
+jobs:
+  quality:
+    runs-on: ubuntu-24.04             # Pinned OS version
+    defaults:
+      run:
+        working-directory: frontend   # All `run` steps execute inside frontend/
+    steps:
+      - uses: actions/checkout@v4     # Download the repo code
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24            # Same version as the Dockerfile
+          cache: npm                  # Cache npm packages between runs
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci                   # Clean install, exactly what package-lock.json says
+
+      - name: Type check
+        run: npx vue-tsc --noEmit     # TypeScript errors, without emitting files
+
+      - name: Build
+        run: npm run build            # Make sure the app actually builds
+
+      - name: Dependency audit
+        run: npm audit --audit-level=high  # Fail only on high/critical vulnerabilities
+
+  docker:
+    needs: quality                    # Only runs if the quality job passed
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3   # Modern Docker builder (needed for caching)
+      - uses: docker/build-push-action@v6
+        with:
+          context: ./frontend         # Folder that contains the Dockerfile
+          push: false                 # Build only, do not publish the image
+          cache-from: type=gha        # Reuse image layers cached in GitHub
+          cache-to: type=gha,mode=max # Save all layers for the next run
