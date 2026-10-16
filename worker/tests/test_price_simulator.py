@@ -8,6 +8,7 @@ def test_simulate_returns_float():
     assert isinstance(result, float), "Result should be a float"
     assert result > 0, "Price should be positive"
 
+
 def test_simulate_minimum_price_is_one():
     """Verify that simulated prices never drop below 1.0"""
     low_price = 1.0
@@ -18,12 +19,14 @@ def test_simulate_minimum_price_is_one():
 
         assert new_price >= 1.0, f"Price dropped below minimum: {new_price}"
 
+
 def test_simulate_returns_two_decimals():
     """Verify that prices are rounded to exactly 2 decimal places"""
     result = simulate_price_change(99.9999999)
 
     # Check that result matches its rounded version
     assert result == round(result, 2), "Price should have max 2 decimal places"
+
 
 def test_simulate_stays_in_realistic_range():
     """Verify that simulated price changes stay within realistic market bounds"""

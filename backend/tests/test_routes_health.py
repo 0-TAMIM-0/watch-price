@@ -10,6 +10,7 @@ We test both success (ready) and failure (not ready) cases.
 """
 
 from unittest.mock import patch
+from sqlalchemy.exc import OperationalError
 
 
 class TestHealthChecks:
@@ -61,14 +62,14 @@ class TestHealthChecks:
 
         # Mock the database to fail
         with patch("app.db.session.execute") as mock_execute:
-            mock_execute.side_effect = Exception("Database connection failed")
+            mock_execute.side_effect = OperationalError("SELECT 1", {}, Exception("Database connection failed"))
 
             # Make the request
             response = client.get("/ready")
 
             assert response.status_code == 503
             assert response.json["status"] == "not ready"
-            assert "Database connection failed" in response.json["error"]
+            assert "error" not in response.json   # make sure nothing leaks
 
             # Verify the database check was actually called
             mock_execute.assert_called_once()

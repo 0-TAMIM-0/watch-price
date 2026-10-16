@@ -1,6 +1,11 @@
 from flask import Blueprint, jsonify, request, abort
 from app import db
 from app.models import Product, PriceHistory
+import logging
+from sqlalchemy.exc import SQLAlchemyError
+
+
+logger = logging.getLogger(__name__)
 
 
 api = Blueprint("api", __name__, url_prefix="/api")
@@ -10,6 +15,7 @@ health_app = Blueprint("health", __name__)
 
 
 # ========== Health & Readiness Checks (for Kubernetes probes) ==========
+
 
 @health_app.route("/health")
 def health():
@@ -23,31 +29,40 @@ def ready():
     try:
         db.session.execute(db.text("SELECT 1"))
         return jsonify({"status": "ready"}), 200
-    except Exception as e:
-        return jsonify({"status": "not ready", "error": str(e)}), 503
+    except SQLAlchemyError:
+        logger.exception("Readiness check failed")  # full details go to the logs only
+        return jsonify(
+            {"status": "not ready"}
+        ), 503  # no internal details in the response
 
 
 # ========== Products CRUD ==========
+
 
 @api.route("/products", methods=["POST"])
 def add_product():
     """Add a new product to track"""
     data = request.get_json()
 
-    if not data or "name" not in data or "current_price" not in data or "target_price" not in data:
-        return jsonify({"error": "name, current_price, and target_price are required"}), 400
+    if (
+        not data
+        or "name" not in data
+        or "current_price" not in data
+        or "target_price" not in data
+    ):
+        return jsonify(
+            {"error": "name, current_price, and target_price are required"}
+        ), 400
 
     product = Product(
         name=data["name"],
         category=data.get("category"),
         image_url=data.get("image_url"),
         target_price=data["target_price"],
-        current_price=data["current_price"]
+        current_price=data["current_price"],
     )
 
-    product.price_history.append(
-        PriceHistory(price=data["current_price"])
-    )
+    product.price_history.append(PriceHistory(price=data["current_price"]))
     db.session.add(product)
     db.session.commit()
 
@@ -70,8 +85,7 @@ def get_product(product_id):
         abort(404, description="Product not found")
 
     history = (
-        PriceHistory.query
-        .filter_by(product_id=product_id)
+        PriceHistory.query.filter_by(product_id=product_id)
         .order_by(PriceHistory.checked_at.asc())
         .all()
     )

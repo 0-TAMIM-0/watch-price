@@ -16,6 +16,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # ========== DATABASE FIXTURES ==========
 
+
 @pytest.fixture
 def database_url():
     """Fixture that returns database URL from environment variables with SQLite fallback"""
@@ -51,6 +52,7 @@ SCHEMA_STATEMENTS = [
 
 
 # ========== ENGINE FIXTURES ==========
+
 
 @pytest.fixture
 def engine(database_url):

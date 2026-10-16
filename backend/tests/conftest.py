@@ -21,6 +21,7 @@ from app import create_app, db
 
 # ========== SESSION-LEVEL FIXTURE ==========
 
+
 @pytest.fixture(scope="session")
 def app():
     """
@@ -53,6 +54,7 @@ def app():
 
 # ========== TEST CLIENT FIXTURE ==========
 
+
 @pytest.fixture
 def client(app):
     """
@@ -68,6 +70,7 @@ def client(app):
 
 # ========== DATABASE SESSION FIXTURE ==========
 
+
 @pytest.fixture
 def db_session(app):
     """
@@ -78,8 +81,8 @@ def db_session(app):
     - Provides direct access to the database session
     - Ensures test isolation (each test starts with clean DB)
     """
-    with app.app_context():         # Ensure we're in Flask app context
-        yield db.session            # Provide the session to the test
+    with app.app_context():  # Ensure we're in Flask app context
+        yield db.session  # Provide the session to the test
 
         # rollback any uncommitted changes
         db.session.rollback()

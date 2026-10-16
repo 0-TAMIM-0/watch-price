@@ -14,7 +14,7 @@ class TestProductModel:
             category="Electronics",
             image_url="https://example.com/iphone.jpg",
             target_price=800,
-            current_price=999
+            current_price=999,
         )
 
         db_session.add(product)
@@ -29,10 +29,7 @@ class TestProductModel:
     def test_product_to_dict(self, db_session):
         """Test converting product to dictionary"""
         product = Product(
-            name="Test Product",
-            category="Test",
-            target_price=100,
-            current_price=150
+            name="Test Product", category="Test", target_price=100, current_price=150
         )
 
         db_session.add(product)
@@ -49,33 +46,21 @@ class TestProductModel:
     def test_product_target_reached(self, db_session):
         """Test target_reached calculation"""
         # Case 1: Price above target
-        product1 = Product(
-            name="Expensive Item",
-            target_price=100,
-            current_price=150
-        )
+        product1 = Product(name="Expensive Item", target_price=100, current_price=150)
         db_session.add(product1)
         db_session.commit()
 
         assert product1.to_dict()["target_reached"] == False
 
         # Case 2: Price equal to target
-        product2 = Product(
-            name="Equal Price",
-            target_price=100,
-            current_price=100
-        )
+        product2 = Product(name="Equal Price", target_price=100, current_price=100)
         db_session.add(product2)
         db_session.commit()
 
         assert product2.to_dict()["target_reached"] == True
 
         # Case 3: Price below target
-        product3 = Product(
-            name="Cheap Item",
-            target_price=100,
-            current_price=50
-        )
+        product3 = Product(name="Cheap Item", target_price=100, current_price=50)
         db_session.add(product3)
         db_session.commit()
 
@@ -83,11 +68,7 @@ class TestProductModel:
 
     def test_product_cascade_delete(self, db_session):
         """Test that deleting product also deletes price history"""
-        product = Product(
-            name="Delete Test",
-            target_price=100,
-            current_price=200
-        )
+        product = Product(name="Delete Test", target_price=100, current_price=200)
         db_session.add(product)
         db_session.flush()
 
@@ -140,11 +121,7 @@ class TestPriceHistoryModel:
 
     def test_price_history_creation(self, db_session):
         """Test creating a price history record"""
-        product = Product(
-            name="Test Product",
-            target_price=100,
-            current_price=200
-        )
+        product = Product(name="Test Product", target_price=100, current_price=200)
         db_session.add(product)
         db_session.flush()
 
@@ -159,11 +136,7 @@ class TestPriceHistoryModel:
 
     def test_price_history_to_dict(self, db_session):
         """Test converting price history to dictionary"""
-        product = Product(
-            name="Test",
-            target_price=100,
-            current_price=200
-        )
+        product = Product(name="Test", target_price=100, current_price=200)
         db_session.add(product)
         db_session.flush()
 
@@ -180,11 +153,7 @@ class TestPriceHistoryModel:
 
     def test_price_history_relationship(self, db_session):
         """Test relationship between Product and PriceHistory"""
-        product = Product(
-            name="Test Relationship",
-            target_price=100,
-            current_price=200
-        )
+        product = Product(name="Test Relationship", target_price=100, current_price=200)
         db_session.add(product)
         db_session.flush()
 

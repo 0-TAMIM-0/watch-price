@@ -1,6 +1,7 @@
 import json
 from app.models import Product, PriceHistory
 
+
 class TestProductRoutes:
     """Test suite for product API endpoints"""
 
@@ -8,13 +9,15 @@ class TestProductRoutes:
         """Test adding a new product"""
         response = client.post(
             "/api/products",
-            data=json.dumps({
-                "name": "Test Product",
-                "category": "Electronics",
-                "target_price": 100.0,
-                "current_price": 150.0
-            }),
-            content_type="application/json"
+            data=json.dumps(
+                {
+                    "name": "Test Product",
+                    "category": "Electronics",
+                    "target_price": 100.0,
+                    "current_price": 150.0,
+                }
+            ),
+            content_type="application/json",
         )
 
         assert response.status_code == 201
@@ -29,7 +32,7 @@ class TestProductRoutes:
         response = client.post(
             "/api/products",
             data=json.dumps({"name": "No Price"}),
-            content_type="application/json"
+            content_type="application/json",
         )
 
         assert response.status_code == 400
@@ -43,7 +46,7 @@ class TestProductRoutes:
             name="iPhone 15",
             category="Electronics",
             target_price=800,
-            current_price=999
+            current_price=999,
         )
         db_session.add(product1)
         db_session.commit()
@@ -52,7 +55,7 @@ class TestProductRoutes:
             name="MacBook Pro",
             category="Computers",
             target_price=1500,
-            current_price=2499
+            current_price=2499,
         )
         db_session.add(product2)
         db_session.commit()
@@ -69,9 +72,14 @@ class TestProductRoutes:
         holding its initial price (regression test)."""
         response = client.post(
             "/api/products",
-            data=json.dumps({"name": "History Product",
-                            "target_price": 100.0, "current_price": 150.0}),
-            content_type="application/json"
+            data=json.dumps(
+                {
+                    "name": "History Product",
+                    "target_price": 100.0,
+                    "current_price": 150.0,
+                }
+            ),
+            content_type="application/json",
         )
         created = json.loads(response.data)
 
@@ -82,8 +90,11 @@ class TestProductRoutes:
 
     def test_add_product_missing_fields_creates_no_history(self, client, db_session):
         """A rejected request must not leave orphan history rows behind."""
-        client.post("/api/products", data=json.dumps({"name": "No Price"}),
-                    content_type="application/json")
+        client.post(
+            "/api/products",
+            data=json.dumps({"name": "No Price"}),
+            content_type="application/json",
+        )
 
         assert db_session.query(PriceHistory).count() == 0
 
@@ -93,7 +104,7 @@ class TestProductRoutes:
             name="Sony WH-1000XM5",
             category="Audio",
             target_price=250,
-            current_price=399
+            current_price=399,
         )
         db_session.add(product)
         db_session.flush()
@@ -123,10 +134,7 @@ class TestProductRoutes:
     def test_delete_product(self, client, db_session):
         """Test deleting a product"""
         product = Product(
-            name="Test Delete",
-            category="Test",
-            target_price=50,
-            current_price=100
+            name="Test Delete", category="Test", target_price=50, current_price=100
         )
         db_session.add(product)
         db_session.commit()

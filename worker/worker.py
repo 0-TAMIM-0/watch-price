@@ -57,8 +57,8 @@ def check_prices(engine: Engine) -> None:
 
     try:
         products = fetch_products(engine)
-    except Exception as e:
-        logger.error(f"Failed to fetch products: {e}")
+    except Exception:
+        logger.exception("Failed to fetch products")
         return
 
     logger.info(f"Found {len(products)} product(s) to check")
@@ -78,8 +78,8 @@ def check_prices(engine: Engine) -> None:
                     f"🎯 ALERT: '{product.name}' hit target price! "
                     f"Current: {new_price}, Target: {product.target_price}"
                 )
-        except Exception as e:
-            logger.error(f"Error processing product id={product.id}: {e}")
+        except Exception:
+            logger.exception(f"Error processing product id={product.id}")
 
     logger.info("Price check cycle completed.")
 
@@ -101,5 +101,5 @@ def main() -> None:
         logger.info("Worker stopped.")
 
 
-if __name__ == "__main__": # pragma: no cover
+if __name__ == "__main__":  # pragma: no cover
     main()

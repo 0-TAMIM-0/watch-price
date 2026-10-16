@@ -1,9 +1,11 @@
 from datetime import datetime, UTC
 from app import db
 
+
 def utcnow() -> datetime:
     """Called on every INSERT (passed as callable, NOT evaluated at import)."""
     return datetime.now(UTC)
+
 
 def to_iso_utc(dt: datetime | None) -> str | None:
     """Serialize to ISO 8601 with explicit +00:00 offset.
@@ -31,10 +33,7 @@ class Product(db.Model):
 
     # One-to-Many relationship: one product has many price history records
     price_history = db.relationship(
-        "PriceHistory",
-        backref="product",
-        lazy=True,
-        cascade="all, delete-orphan"
+        "PriceHistory", backref="product", lazy=True, cascade="all, delete-orphan"
     )
 
     def to_dict(self):
@@ -49,15 +48,12 @@ class Product(db.Model):
             "created_at": to_iso_utc(self.created_at),
         }
 
+
 class PriceHistory(db.Model):
     __tablename__ = "price_history"
 
     id = db.Column(db.Integer, primary_key=True)
-    product_id = db.Column(
-        db.Integer,
-        db.ForeignKey("products.id"),
-        nullable=False
-    )
+    product_id = db.Column(db.Integer, db.ForeignKey("products.id"), nullable=False)
     price = db.Column(db.Float, nullable=False)
     checked_at = db.Column(db.DateTime(timezone=True), default=utcnow)
 
