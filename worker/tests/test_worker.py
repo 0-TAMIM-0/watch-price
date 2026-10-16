@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, ANY
 from sqlalchemy.engine import Engine
 from sqlalchemy import create_engine, text
 
@@ -180,10 +180,9 @@ class TestMain:
         main()
 
         # Verify add_job was called with correct parameters
-        mock_scheduler.add_job.assert_called_once()
-        call_args = mock_scheduler.add_job.call_args
-        assert call_args[0][1] == "interval"  # Check interval type
-        assert call_args[1]["minutes"] == check_interval
+        mock_scheduler.add_job.assert_called_once_with(
+            ANY, "interval", minutes=check_interval, args=[ANY]
+        )
 
     def test_main_runs_initial_check(self, monkeypatch):
         """Verify that main() executes check_prices immediately before scheduler starts"""
