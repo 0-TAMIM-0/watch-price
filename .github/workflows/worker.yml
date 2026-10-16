@@ -4,19 +4,19 @@ on:
   push:
     branches: [main]                  # Run on every push to main...
     paths:                            # ...but only if one of these changed
-      - "worker /**"
-      - ".github/workflows/worker .yml"
+      - "worker/**"
+      - ".github/workflows/worker.yml"
   pull_request:
     branches: [main]                  # Run on PRs targeting main
     paths:
-      - "worker /**"
-      - ".github/workflows/worker .yml"
+      - "worker/**"
+      - ".github/workflows/worker.yml"
 
 permissions:
   contents: read                      # Read-only token (least privilege)
 
 concurrency:
-  group: worker -${{ github.ref }}    # One queue per branch
+  group: worker-${{ github.ref }}    # One queue per branch
   cancel-in-progress: true            # A new push cancels the older run
 
 jobs:
@@ -32,7 +32,7 @@ jobs:
         with:
           python-version: "3.14"      # Same version as the Dockerfile
           cache: pip                  # Cache downloaded packages between runs
-          cache-dependency-path: worker /requirements.txt  # Refresh cache when this file changes
+          cache-dependency-path: worker/requirements.txt  # Refresh cache when this file changes
 
       - name: Install dependencies
         run: pip install -r requirements.txt ruff pip-audit  # App deps + lint and security tools
