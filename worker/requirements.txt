@@ -1,7 +1,6 @@
 sqlalchemy==2.0.53
 apscheduler==3.11.3
 psycopg2-binary==2.9.12
-python-dotenv==1.2.3
 
 pytest==9.1.1
 pytest-cov==7.1.0

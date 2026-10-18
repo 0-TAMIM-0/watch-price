@@ -1,4 +1,11 @@
 # WatchPrice 📈
+[![Backend CI](https://github.com/0-TAMIM-0/watch-price/actions/workflows/backend.yml/badge.svg)](https://github.com/0-TAMIM-0/watch-price/actions/workflows/backend.yml)
+
+[![Worker CI](https://github.com/0-TAMIM-0/watch-price/actions/workflows/worker.yml/badge.svg)](https://github.com/0-TAMIM-0/watch-price/actions/workflows/worker.yml)
+
+[![Frontend CI](https://github.com/0-TAMIM-0/watch-price/actions/workflows/frontend.yml/badge.svg)](https://github.com/0-TAMIM-0/watch-price/actions/workflows/frontend.yml/badge.svg)
+
+
 **<span style="color:red;">It is not yet complete. 😢</span>**
 
 A self-hosted price monitoring platform built as a hands-on **DevOps training project** — covering the full lifecycle from local development to CI/CD, containerized deployment, and observability.
@@ -74,10 +81,11 @@ git clone https://github.com/<your-username>/watchprice.git
 cd watchprice
 
 # Start all services
+cp .env.example .env
 docker-compose up --build
 ```
 
-- Frontend: `http://localhost:5173`
+- Frontend: `http://localhost:3000`
 - Backend API: `http://localhost:5000`
 
 ## 📍 Roadmap

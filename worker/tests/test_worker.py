@@ -2,7 +2,7 @@ from unittest.mock import MagicMock, ANY
 from sqlalchemy.engine import Engine
 from sqlalchemy import create_engine, text
 
-from worker import create_db_engine, fetch_products, update_price, check_prices, Product, main
+from worker import CHECK_INTERVAL_MINUTES, DATABASE_URL, create_db_engine, fetch_products, update_price, check_prices, Product, main
 
 
 class TestCreateDBEngine:
@@ -15,9 +15,9 @@ class TestCreateDBEngine:
         assert isinstance(created_engine, Engine), "Expected Engine instance"
         created_engine.dispose()
 
-    def test_create_db_engine_accepts_env_url(self, database_url):
+    def test_create_db_engine_accepts_env_url(self):
         """Verify that create_db_engine accepts database URL from environment variables"""
-        created_engine = create_db_engine(database_url)
+        created_engine = create_db_engine(DATABASE_URL)
 
         assert isinstance(created_engine, Engine), "Expected Engine instance from env URL"
 
@@ -170,7 +170,7 @@ class TestMain:
 
         assert "WatchPrice worker started" in caplog.text
 
-    def test_main_schedules_check_prices_job(self, monkeypatch, check_interval):
+    def test_main_schedules_check_prices_job(self, monkeypatch):
         """Verify that main() schedules check_prices to run at specified interval"""
         # Mock scheduler to capture job configuration
         mock_scheduler = MagicMock()
@@ -181,7 +181,7 @@ class TestMain:
 
         # Verify add_job was called with correct parameters
         mock_scheduler.add_job.assert_called_once_with(
-            ANY, "interval", minutes=check_interval, args=[ANY]
+            ANY, "interval", minutes=CHECK_INTERVAL_MINUTES, args=[ANY]
         )
 
     def test_main_runs_initial_check(self, monkeypatch):

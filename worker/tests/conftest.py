@@ -1,32 +1,16 @@
 import sys
 import os
 from pathlib import Path
-from dotenv import load_dotenv
 
 import pytest
 from sqlalchemy import create_engine, text
 
-# Load .env.test automatically before importing any modules
-env_file = Path(__file__).parent.parent / ".env.test"
-load_dotenv(env_file, override=True)
+# Set test config BEFORE importing worker/config (config reads env at import time)
+os.environ["DATABASE_URL"] = "sqlite:///:memory:"
+os.environ["CHECK_INTERVAL_MINUTES"] = "1"
 
 # Add parent directory to Python path for module imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
-
-
-# ========== DATABASE FIXTURES ==========
-
-
-@pytest.fixture
-def database_url():
-    """Fixture that returns database URL from environment variables with SQLite fallback"""
-    return os.getenv("DATABASE_URL", "sqlite:///:memory:")
-
-
-@pytest.fixture
-def check_interval():
-    """Fixture that returns check interval in minutes from environment variables"""
-    return int(os.getenv("CHECK_INTERVAL_MINUTES", "1"))
 
 
 # ========== DATABASE SCHEMA ==========
@@ -55,9 +39,9 @@ SCHEMA_STATEMENTS = [
 
 
 @pytest.fixture
-def engine(database_url):
+def engine():
     """Fixture that creates a test database engine with schema initialized"""
-    eng = create_engine(database_url)
+    eng = create_engine(os.environ["DATABASE_URL"])
 
     # Create all tables
     with eng.begin() as conn:

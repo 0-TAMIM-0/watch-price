@@ -15,6 +15,7 @@ import os
 # Set DATABASE_URL BEFORE importing app.create_app()
 # This ensures config.py uses SQLite instead of PostgreSQL (Lightweight, fast database for testing)
 os.environ["DATABASE_URL"] = "sqlite:///:memory:"
+os.environ["SECRET_KEY"] = "test-secret-key"
 
 from app import create_app, db
 

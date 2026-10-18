@@ -1,14 +1,6 @@
 import os
-from dotenv import load_dotenv
-
-
-load_dotenv()
 
 
 class Config:
-    SQLALCHEMY_DATABASE_URI = os.getenv(
-        "DATABASE_URL",
-        "postgresql://watchprice:watchprice@localhost:5432/watchprice",
-    )
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key")
+    SQLALCHEMY_DATABASE_URI = os.environ["DATABASE_URL"]
+    SECRET_KEY = os.environ["SECRET_KEY"]
