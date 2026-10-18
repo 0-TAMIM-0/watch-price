@@ -1,4 +1,5 @@
 import logging
+import math
 import os
 import uuid
 
@@ -82,24 +83,48 @@ def get_upload(filename):
     return send_from_directory(current_app.config["UPLOAD_FOLDER"], filename)
 
 
+def validate_product_form(data):
+    """Return (values, error). error is None when valid."""
+    name = (data.get("name") or "").strip()
+    if not name:
+        return None, "Name is required"
+    if len(name) > 255:
+        return None, "Name must be at most 255 characters"
+
+    category = (data.get("category") or "").strip() or None
+    if category and len(category) > 100:
+        return None, "Category must be at most 100 characters"
+
+    try:
+        current_price = float(data["current_price"])
+        target_price = float(data["target_price"])
+    except (KeyError, ValueError):
+        return None, "Prices must be numbers"
+
+    if not (math.isfinite(current_price) and math.isfinite(target_price)):
+        return None, "Prices must be finite numbers"
+    if current_price <= 0 or target_price <= 0:
+        return None, "Prices must be greater than 0"
+    if target_price >= current_price:
+        return None, "Target price must be less than current price"
+
+    return {
+        "name": name,
+        "category": category,
+        "current_price": current_price,
+        "target_price": target_price,
+    }, None
+
+
 # ========== Products CRUD ==========
 
 
 @api.route("/products", methods=["POST"])
 def add_product():
     """Add a new product to track (multipart form)"""
-    data = request.form
-
-    if not all(k in data for k in ("name", "current_price", "target_price")):
-        return jsonify(
-            {"error": "Name, Current Price, and Target Price are required"}
-        ), 400
-
-    try:
-        current_price = float(data["current_price"])
-        target_price = float(data["target_price"])
-    except ValueError:
-        return jsonify({"error": "prices must be numbers"}), 400
+    values, error = validate_product_form(request.form)
+    if error:
+        return jsonify({"error": error}), 400
 
     image_url = None
     file = request.files.get("image")
@@ -110,14 +135,14 @@ def add_product():
             return jsonify({"error": str(e)}), 400
 
     product = Product(
-        name=data["name"],
-        category=data.get("category") or None,
+        name=values["name"],
+        category=values["category"],
         image_url=image_url,
-        target_price=target_price,
-        current_price=current_price,
+        target_price=values["target_price"],
+        current_price=values["current_price"],
     )
 
-    product.price_history.append(PriceHistory(price=current_price))
+    product.price_history.append(PriceHistory(price=values["current_price"]))
     db.session.add(product)
     db.session.commit()
 

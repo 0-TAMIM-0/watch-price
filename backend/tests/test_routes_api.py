@@ -1,6 +1,7 @@
 import io
 import os
 import json
+import pytest
 from unittest.mock import patch
 from app.models import Product, PriceHistory
 
@@ -267,3 +268,25 @@ class TestProductRoutes:
 
         assert response.status_code == 200
         assert db_session.get(Product, created["id"]) is None
+
+    @pytest.mark.parametrize(
+        "form",
+        [
+            {"name": "", "target_price": "10", "current_price": "20"},
+            {"name": "x" * 256, "target_price": "10", "current_price": "20"},
+            {"name": "A", "target_price": "nan", "current_price": "20"},
+            {"name": "A", "target_price": "10", "current_price": "inf"},
+            {"name": "A", "target_price": "-5", "current_price": "20"},
+            {"name": "A", "target_price": "0", "current_price": "20"},
+            {"name": "A", "target_price": "30", "current_price": "20"},
+            {"name": "A", "target_price": "20", "current_price": "20"},
+            {"name": "A", "category": "c" * 101, "target_price": "10", "current_price": "20"},
+        ],
+    )
+    def test_add_product_rejects_invalid_input(self, client, db_session, form):
+        response = client.post(
+            "/api/products", data=form, content_type="multipart/form-data"
+        )
+
+        assert response.status_code == 400
+        assert db_session.query(Product).count() == 0
