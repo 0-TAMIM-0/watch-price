@@ -53,7 +53,6 @@ The backend and worker are deployed as **separate services**, each with its own 
 | Frontend          | Vue 3 + TypeScript + Vite |
 | Backend API       | Flask + SQLAlchemy       |
 | Database          | PostgreSQL               |
-| Data Simulation   | Faker                    |
 | Containerization  | Docker, Docker Compose   |
 | Orchestration     | Kubernetes               |
 | CI/CD             | GitHub Actions           |
@@ -95,7 +94,7 @@ This project is being built incrementally, in phases, to reflect a realistic Dev
 - [x] Worker service with simulated price checks
 - [x] Dockerized services with Docker Compose
 - [x] CI pipeline: lint → test → build → push
-- [x] Kubernetes deployment (Deployments, Services, ConfigMaps, Secrets)
+- [ ] Kubernetes deployment (Deployments, Services, ConfigMaps, Secrets)
 
 **Phase 2 — Observability & Security**
 - [ ] Monitoring with Prometheus + Grafana
@@ -108,7 +107,3 @@ This project is being built incrementally, in phases, to reflect a realistic Dev
 - [ ] Blue-Green / Canary deployment strategy
 - [ ] Automated database backups with tiered storage (hot/warm/cold)
 - [ ] Chaos engineering mode (fault injection & recovery testing)
-
-## 📖 Why This Project Exists
-
-This repo is meant to demonstrate applied DevOps thinking, not just tool usage — going from `git push` to a monitored, resilient, production-like deployment, and documenting the reasoning behind each decision along the way.

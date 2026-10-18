@@ -26,9 +26,9 @@ jobs:
       run:
         working-directory: backend    # All `run` steps execute inside backend/
     steps:
-      - uses: actions/checkout@v4     # Download the repo code
+      - uses: actions/checkout@v5     # Download the repo code
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.14"      # Same version as the Dockerfile
           cache: pip                  # Cache downloaded packages between runs
@@ -50,7 +50,7 @@ jobs:
     needs: quality                    # Only runs if the quality job passed
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: docker/setup-buildx-action@v3   # Modern Docker builder (needed for caching)
       - uses: docker/build-push-action@v6
         with:
