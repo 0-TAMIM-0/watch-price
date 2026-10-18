@@ -290,3 +290,20 @@ class TestProductRoutes:
 
         assert response.status_code == 400
         assert db_session.query(Product).count() == 0
+
+    def test_add_product_rejects_too_large_image(self, client, db_session):
+        big = io.BytesIO(b"x" * (2 * 1024 * 1024 + 1))
+        response = client.post(
+            "/api/products",
+            data={
+                "name": "Big Image",
+                "target_price": "100",
+                "current_price": "150",
+                "image": (big, "big.png"),
+            },
+            content_type="multipart/form-data",
+        )
+
+        assert response.status_code == 413
+        assert response.json["error"] == "File too large (max 2MB)"
+        assert db_session.query(Product).count() == 0

@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from .config import Config
@@ -15,12 +15,16 @@ def create_app():
     CORS(app)  # Allow Cross-Origin requests
 
     with app.app_context():
-        # from .models import Product, PriceHistory  # Import models for SQLAlchemy
+        from .models import Product, PriceHistory  # noqa: F401  (Import models for SQLAlchemy)
         db.create_all()  # Create tables if they don't exist
 
         from .routes import api, health_app  # Import blueprints
 
         app.register_blueprint(api)
         app.register_blueprint(health_app)
+
+    @app.errorhandler(413)
+    def file_too_large(_error):
+        return jsonify({"error": "File too large (max 2MB)"}), 413
 
     return app

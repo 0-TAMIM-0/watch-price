@@ -141,6 +141,22 @@ class TestCheckPrices:
         # Verify alert was logged
         assert any("ALERT" in record.message for record in caplog.records)
 
+    def test_check_prices_no_repeat_alert_when_already_below_target(self, engine, caplog, monkeypatch):
+        """No alert if the price was already below target before this cycle"""
+        with engine.begin() as conn:
+            conn.execute(
+                text(
+                    "INSERT INTO products (id, name, current_price, target_price) "
+                    "VALUES (1, 'Cheap', 50.0, 60.0)"
+                )
+            )
+        monkeypatch.setattr("worker.simulate_price_change", lambda price: price - 5)
+
+        with caplog.at_level("WARNING"):
+            check_prices(engine)
+
+        assert not any("ALERT" in record.message for record in caplog.records)
+
     def test_check_prices_no_alert_when_target_not_hit(self, seeded_engine, monkeypatch, caplog):
         """Verify that no alert is logged when price stays above target_price"""
         # Mock simulate_price_change to return a very high price

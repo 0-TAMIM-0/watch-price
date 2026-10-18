@@ -63,6 +63,9 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
     networks:
       - watchprice-network
 
@@ -74,8 +77,6 @@ services:
       # dockerfile: Dockerfile
       dockerfile: Dockerfile.dev
     container_name: watchprice-frontend
-    environment:
-      API_URL: http://localhost:5000/api
     ports:
       - "3000:3000"
     volumes:

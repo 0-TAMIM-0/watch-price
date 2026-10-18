@@ -73,7 +73,10 @@ def check_prices(engine: Engine) -> None:
                 f"{product.current_price} -> {new_price}"
             )
 
-            if new_price <= product.target_price:
+            if (
+                product.current_price > product.target_price
+                and new_price <= product.target_price
+            ):
                 logger.warning(
                     f"🎯 ALERT: '{product.name}' hit target price! "
                     f"Current: {new_price}, Target: {product.target_price}"
