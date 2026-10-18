@@ -1,25 +1,18 @@
 # Build stage
-FROM node:24-alpine as builder
+FROM node:24-alpine AS builder
 
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm install
+RUN npm ci
 
 COPY . .
 RUN npm run build
 
 # Production stage
-FROM node:24-alpine
+FROM nginx:alpine
 
-WORKDIR /app
-
-# Install serve to run the app
-RUN npm install -g serve
-
-# Copy built files from builder
-COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/dist /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 3000
-
-CMD ["serve", "-s", "dist", "-l", "3000"]
