@@ -1,8 +1,6 @@
 # WatchPrice 📈
 [![Backend CI](https://github.com/0-TAMIM-0/watch-price/actions/workflows/backend.yml/badge.svg?branch=main)](https://github.com/0-TAMIM-0/watch-price/actions/workflows/backend.yml)
-
 [![Worker CI](https://github.com/0-TAMIM-0/watch-price/actions/workflows/worker.yml/badge.svg?branch=main)](https://github.com/0-TAMIM-0/watch-price/actions/workflows/worker.yml)
-
 [![Frontend CI](https://github.com/0-TAMIM-0/watch-price/actions/workflows/frontend.yml/badge.svg?branch=main)](https://github.com/0-TAMIM-0/watch-price/actions/workflows/frontend.yml/badge.svg)
 
 
@@ -82,7 +80,7 @@ cd watchprice
 
 # Start all services
 cp .env.example .env
-docker-compose up --build
+docker compose up --build
 ```
 
 - Frontend: `http://localhost:3000`

@@ -1,3 +1,5 @@
+import io
+import os
 import json
 from app.models import Product, PriceHistory
 
@@ -9,15 +11,13 @@ class TestProductRoutes:
         """Test adding a new product"""
         response = client.post(
             "/api/products",
-            data=json.dumps(
-                {
-                    "name": "Test Product",
-                    "category": "Electronics",
-                    "target_price": 100.0,
-                    "current_price": 150.0,
-                }
-            ),
-            content_type="application/json",
+            data={
+                "name": "Test Product",
+                "category": "Electronics",
+                "target_price": "100.0",
+                "current_price": "150.0",
+            },
+            content_type="multipart/form-data",
         )
 
         assert response.status_code == 201
@@ -31,8 +31,8 @@ class TestProductRoutes:
         """Test adding product without required fields"""
         response = client.post(
             "/api/products",
-            data=json.dumps({"name": "No Price"}),
-            content_type="application/json",
+            data={"name": "No Price"},
+            content_type="multipart/form-data",
         )
 
         assert response.status_code == 400
@@ -72,14 +72,12 @@ class TestProductRoutes:
         holding its initial price (regression test)."""
         response = client.post(
             "/api/products",
-            data=json.dumps(
-                {
-                    "name": "History Product",
-                    "target_price": 100.0,
-                    "current_price": 150.0,
-                }
-            ),
-            content_type="application/json",
+            data={
+                "name": "History Product",
+                "target_price": "100.0",
+                "current_price": "150.0",
+            },
+            content_type="multipart/form-data",
         )
         created = json.loads(response.data)
 
@@ -153,3 +151,99 @@ class TestProductRoutes:
         response = client.delete("/api/products/999")
 
         assert response.status_code == 404
+
+    def test_add_product_with_image(self, client, db_session):
+        response = client.post(
+            "/api/products",
+            data={
+                "name": "With Image",
+                "target_price": "100",
+                "current_price": "150",
+                "image": (io.BytesIO(b"fake"), "pic.png"),
+            },
+            content_type="multipart/form-data",
+        )
+
+        assert response.status_code == 201
+        assert response.json["image_url"].startswith("/api/uploads/")
+
+    def test_add_product_rejects_bad_image_extension(self, client, db_session):
+        response = client.post(
+            "/api/products",
+            data={
+                "name": "Bad Image",
+                "target_price": "100",
+                "current_price": "150",
+                "image": (io.BytesIO(b"x"), "evil.exe"),
+            },
+            content_type="multipart/form-data",
+        )
+
+        assert response.status_code == 400
+        assert db_session.query(Product).count() == 0
+
+    def test_add_product_invalid_price(self, client, db_session):
+        response = client.post(
+            "/api/products",
+            data={"name": "X", "target_price": "abc", "current_price": "150"},
+            content_type="multipart/form-data",
+        )
+
+        assert response.status_code == 400
+
+    def test_delete_product_removes_image_file(self, client, db_session):
+        created = client.post(
+            "/api/products",
+            data={
+                "name": "Delete Image",
+                "target_price": "100",
+                "current_price": "150",
+                "image": (io.BytesIO(b"fake"), "pic.png"),
+            },
+            content_type="multipart/form-data",
+        ).json
+
+        assert client.get(created["image_url"]).status_code == 200
+
+        client.delete(f"/api/products/{created['id']}")
+
+        assert client.get(created["image_url"]).status_code == 404
+
+    def test_delete_product_when_image_file_missing(self, client, db_session):
+        """Deleting must succeed even if the image file is already gone."""
+        created = client.post(
+            "/api/products",
+            data={
+                "name": "Missing Image",
+                "target_price": "100",
+                "current_price": "150",
+                "image": (io.BytesIO(b"fake"), "pic.png"),
+            },
+            content_type="multipart/form-data",
+        ).json
+
+        # remove the file manually, behind the app's back
+        filename = os.path.basename(created["image_url"])
+        os.remove(os.path.join(os.environ["UPLOAD_FOLDER"], filename))
+
+        response = client.delete(f"/api/products/{created['id']}")
+
+        assert response.status_code == 200
+        assert db_session.get(Product, created["id"]) is None
+
+    def test_uploaded_image_can_be_fetched(self, client, db_session):
+        created = client.post(
+            "/api/products",
+            data={
+                "name": "Fetch Image",
+                "target_price": "100",
+                "current_price": "150",
+                "image": (io.BytesIO(b"fake"), "pic.png"),
+            },
+            content_type="multipart/form-data",
+        ).json
+
+        response = client.get(created["image_url"])
+
+        assert response.status_code == 200
+        assert response.data == b"fake"

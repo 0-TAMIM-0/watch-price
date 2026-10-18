@@ -9,6 +9,9 @@ export default defineConfig({
   server: {
     host: true,
     watch: { usePolling: true },   // required on Windows + Docker, otherwise file changes are not detected
+    proxy: {
+      '/api': 'http://backend:5000',
+    },
   },
 
   resolve: {

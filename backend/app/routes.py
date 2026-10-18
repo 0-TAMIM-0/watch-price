@@ -1,12 +1,17 @@
-from flask import Blueprint, jsonify, request, abort
-from app import db
-from app.models import Product, PriceHistory
 import logging
+import os
+import uuid
+
+from flask import Blueprint, abort, current_app, jsonify, request, send_from_directory
 from sqlalchemy.exc import SQLAlchemyError
+
+from app import db
+from app.models import PriceHistory, Product
 
 
 logger = logging.getLogger(__name__)
 
+ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "webp"}
 
 api = Blueprint("api", __name__, url_prefix="/api")
 
@@ -36,33 +41,81 @@ def ready():
         ), 503  # no internal details in the response
 
 
+# ========== Image Functions ==========
+
+
+def save_image(file):
+    """Validate and save an uploaded image, return its URL"""
+    ext = file.filename.rsplit(".", 1)[-1].lower() if "." in file.filename else ""
+    if ext not in ALLOWED_EXTENSIONS:
+        raise ValueError("unsupported file type")
+
+    folder = current_app.config["UPLOAD_FOLDER"]
+    os.makedirs(folder, exist_ok=True)
+
+    # random name: never trust the client filename
+    filename = f"{uuid.uuid4().hex}.{ext}"
+    file.save(os.path.join(folder, filename))
+
+    return f"/api/uploads/{filename}"
+
+
+def delete_image(image_url):
+    """Delete an uploaded image file from disk (ignore if missing)"""
+    if not image_url:
+        return
+
+    filename = os.path.basename(image_url)
+    path = os.path.join(current_app.config["UPLOAD_FOLDER"], filename)
+
+    try:
+        os.remove(path)
+    except FileNotFoundError:
+        pass
+
+
+@api.route("/uploads/<filename>", methods=["GET"])
+def get_upload(filename):
+    """Serve an uploaded image"""
+    return send_from_directory(current_app.config["UPLOAD_FOLDER"], filename)
+
+
 # ========== Products CRUD ==========
 
 
 @api.route("/products", methods=["POST"])
 def add_product():
-    """Add a new product to track"""
-    data = request.get_json()
+    """Add a new product to track (multipart form)"""
+    data = request.form
 
-    if (
-        not data
-        or "name" not in data
-        or "current_price" not in data
-        or "target_price" not in data
-    ):
+    if not all(k in data for k in ("name", "current_price", "target_price")):
         return jsonify(
-            {"error": "name, current_price, and target_price are required"}
+            {"error": "Name, Current Price, and Target Price are required"}
         ), 400
+
+    try:
+        current_price = float(data["current_price"])
+        target_price = float(data["target_price"])
+    except ValueError:
+        return jsonify({"error": "prices must be numbers"}), 400
+
+    image_url = None
+    file = request.files.get("image")
+    if file and file.filename:
+        try:
+            image_url = save_image(file)
+        except ValueError as e:
+            return jsonify({"error": str(e)}), 400
 
     product = Product(
         name=data["name"],
-        category=data.get("category"),
-        image_url=data.get("image_url"),
-        target_price=data["target_price"],
-        current_price=data["current_price"],
+        category=data.get("category") or None,
+        image_url=image_url,
+        target_price=target_price,
+        current_price=current_price,
     )
 
-    product.price_history.append(PriceHistory(price=data["current_price"]))
+    product.price_history.append(PriceHistory(price=current_price))
     db.session.add(product)
     db.session.commit()
 
@@ -98,12 +151,18 @@ def get_product(product_id):
 
 @api.route("/products/<int:product_id>", methods=["DELETE"])
 def delete_product(product_id):
-    """Delete a product and its price history"""
+    """Delete a product, its price history and its image"""
     product = db.session.get(Product, product_id)
 
     if product is None:
         abort(404, description="Product not found")
 
+    image_url = product.image_url
+
     db.session.delete(product)
     db.session.commit()
+
+    # delete the file only AFTER the DB commit succeeded
+    delete_image(image_url)
+
     return jsonify({"message": "Product deleted"}), 200

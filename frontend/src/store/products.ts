@@ -6,7 +6,7 @@ import type { Product } from '@types'
 
 
 const api = axios.create({
-    baseURL: 'http://localhost:5000/api'
+    baseURL: '/api'
 })
 
 export const useProductsStore = defineStore('products', () => {
@@ -35,13 +35,26 @@ export const useProductsStore = defineStore('products', () => {
     }
 
 
-    const createProduct = async (product: Omit<Product, 'id' | 'created_at' | 'target_reached'>): Promise<Product> => {
+    const createProduct = async (product: {
+        name: string
+        category: string | null
+        target_price: number
+        current_price: number
+        image?: File | null
+    }): Promise<Product> => {
+
         loading.value = true
         errored.value = false
 
+        const form = new FormData()
+        form.append('name', product.name)
+        form.append('target_price', String(product.target_price))
+        form.append('current_price', String(product.current_price))
+        if (product.category) form.append('category', product.category)
+        if (product.image) form.append('image', product.image)
+
         try {
-            const { data } = await api.post<Product>('/products', product)
-            console.log(data)
+            const { data } = await api.post<Product>('/products', form)
             return data
         } catch (error) {
             errored.value = true
@@ -87,9 +100,6 @@ export const useProductsStore = defineStore('products', () => {
         }
     }
 
-// @api.route("/products", methods=["POST"])
-// @api.route("/products", methods=["GET"])
-// @api.route("/products/<int:product_id>", methods=["GET"])
-// @api.route("/products/<int:product_id>", methods=["DELETE"])
+
     return { products, product, loading, errored, getAllProducts, createProduct, getProduct, deleteProduct }
 })

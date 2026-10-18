@@ -160,6 +160,7 @@ const handleDelete = async () => {
 
 <style scoped>
 .product-detail {
+    width: 100%;
     display: flex;
     flex-direction: column;
     gap: 3rem;

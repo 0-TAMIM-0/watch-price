@@ -22,10 +22,6 @@ const schema = z.object({
         .max(100, 'Max 100 characters')
         .optional()
         .transform(val => val || null),
-    image_url: z.string()
-        .max(500, 'Max URL 100 characters')
-        .optional()
-        .transform(val => val || null),
     target_price: z.coerce.string()
         .regex(/^\d+(\.\d{1,2})?$/, 'Invalid price format (e.g., 10.50)')
         .min(1, 'Current price is required')
@@ -36,13 +32,15 @@ const schema = z.object({
         .transform(Number).refine(val => val > 0, 'Must be > 0'),
 })
 
-const formData = ref<Product>({
+const formData = ref<Omit<Product, 'image_url'>>({
     name: '',
     category: '' ,
     current_price: 0,
     target_price: 0,
-    image_url: ''
 })
+
+const imageFile = ref<File | null>(null)
+const fileInput = ref<HTMLInputElement | null>(null)
 
 const errors = ref<Record<string, string>>({})
 const debounceMap = ref<Record<string, ReturnType<typeof setTimeout>>>({})
@@ -84,7 +82,6 @@ const handleSubmit = async () => {
     Object.keys(formData.value).forEach(field => {
         validateField(field as keyof typeof formData.value)
     })
-
     // break if there is errors
     if (Object.keys(errors.value).length) {
         return
@@ -92,9 +89,11 @@ const handleSubmit = async () => {
 
     try {
         const validatedData = schema.parse(formData.value)
-        const result = await store.createProduct(validatedData)
-        console.log(result)
-        formData.value = { name: '', category: '', current_price: 0, target_price: 0, image_url: '' }
+        await store.createProduct({ ...validatedData, image: imageFile.value })
+
+        formData.value = { name: '', category: '', current_price: 0, target_price: 0 }
+        imageFile.value = null
+        if (fileInput.value) fileInput.value.value = ''
         productCreated.value = true
     } catch (error) {
         console.error(error)
@@ -143,17 +142,14 @@ const handleSubmit = async () => {
 
             <div class="form-group">
                 <label for="image_url">Image :</label>
-                <input id="image_url" type="file" accept="image/*"
-                    :class="{ error: errors.image_url }"
-                    @change="(e) => formData.image_url = (e.target as HTMLInputElement).files?.[0]?.name || ''"
-                    @input="debounceValidate('image_url')"
-                    >
-                <span v-if="errors.image_url" class="error-msg">{{ errors.image_url }}</span>
+                <input ref="fileInput" id="image_url" type="file" accept="image/png,image/jpeg,image/webp"
+                    @change="(e) => imageFile = (e.target as HTMLInputElement).files?.[0] ?? null"
+                >
             </div>
 
             <button type="submit" class="btn" :disabled="Object.keys(errors).length ? true : false">
                 <span v-if="!store.loading">ADD</span>
-                <span v-else="store.loading">
+                <span v-else>
                     <LoadingSpinner colorVar="--color-text" :size="32"/>
                 </span>
             </button>
