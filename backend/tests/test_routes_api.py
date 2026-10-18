@@ -88,12 +88,13 @@ class TestProductRoutes:
 
     def test_add_product_missing_fields_creates_no_history(self, client, db_session):
         """A rejected request must not leave orphan history rows behind."""
-        client.post(
+        response = client.post(
             "/api/products",
-            data=json.dumps({"name": "No Price"}),
-            content_type="application/json",
+            data={"name": "No Price"},
+            content_type="multipart/form-data",
         )
 
+        assert response.status_code == 400
         assert db_session.query(PriceHistory).count() == 0
 
     def test_get_product_with_history(self, client, db_session):

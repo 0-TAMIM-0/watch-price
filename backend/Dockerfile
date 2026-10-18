@@ -44,4 +44,4 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
 EXPOSE 5000
 
 # Run the application
-CMD ["python", "run.py"]
+CMD ["sh", "-c", "gunicorn -b 0.0.0.0:5000 -w ${WEB_CONCURRENCY:-1} --threads ${GUNICORN_THREADS:-4} --timeout 30 run:app"]

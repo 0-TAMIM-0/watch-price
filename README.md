@@ -1,7 +1,7 @@
 # WatchPrice 📈
 [![Backend CI](https://github.com/0-TAMIM-0/watch-price/actions/workflows/backend.yml/badge.svg?branch=main)](https://github.com/0-TAMIM-0/watch-price/actions/workflows/backend.yml)
 [![Worker CI](https://github.com/0-TAMIM-0/watch-price/actions/workflows/worker.yml/badge.svg?branch=main)](https://github.com/0-TAMIM-0/watch-price/actions/workflows/worker.yml)
-[![Frontend CI](https://github.com/0-TAMIM-0/watch-price/actions/workflows/frontend.yml/badge.svg?branch=main)](https://github.com/0-TAMIM-0/watch-price/actions/workflows/frontend.yml/badge.svg)
+[![Frontend CI](https://github.com/0-TAMIM-0/watch-price/actions/workflows/frontend.yml/badge.svg?branch=main)](https://github.com/0-TAMIM-0/watch-price/actions/workflows/frontend.yml)
 
 
 **<span style="color:red;">It is not yet complete. 😢</span>**
