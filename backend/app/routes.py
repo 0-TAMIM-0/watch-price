@@ -61,7 +61,7 @@ def save_image(file):
 
 
 def delete_image(image_url):
-    """Delete an uploaded image file from disk (ignore if missing)"""
+    """Delete an uploaded image file from disk (never raise)"""
     if not image_url:
         return
 
@@ -72,6 +72,8 @@ def delete_image(image_url):
         os.remove(path)
     except FileNotFoundError:
         pass
+    except OSError:
+        logger.exception("Failed to delete image %s", path)
 
 
 @api.route("/uploads/<filename>", methods=["GET"])

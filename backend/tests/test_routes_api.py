@@ -1,6 +1,7 @@
 import io
 import os
 import json
+from unittest.mock import patch
 from app.models import Product, PriceHistory
 
 
@@ -248,3 +249,21 @@ class TestProductRoutes:
 
         assert response.status_code == 200
         assert response.data == b"fake"
+
+    def test_delete_product_survives_image_delete_error(self, client, db_session):
+        created = client.post(
+            "/api/products",
+            data={
+                "name": "Locked Image",
+                "target_price": "100",
+                "current_price": "150",
+                "image": (io.BytesIO(b"fake"), "pic.png"),
+            },
+            content_type="multipart/form-data",
+        ).json
+
+        with patch("app.routes.os.remove", side_effect=PermissionError("denied")):
+            response = client.delete(f"/api/products/{created['id']}")
+
+        assert response.status_code == 200
+        assert db_session.get(Product, created["id"]) is None
