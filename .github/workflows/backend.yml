@@ -32,10 +32,12 @@ jobs:
         with:
           python-version: "3.14"      # Same version as the Dockerfile
           cache: pip                  # Cache downloaded packages between runs
-          cache-dependency-path: backend/requirements.txt  # Refresh cache when this file changes
+          cache-dependency-path: |   # Refresh cache when this file changes
+            backend/requirements.txt
+            backend/requirements-dev.txt
 
       - name: Install dependencies
-        run: pip install -r requirements.txt ruff pip-audit  # App deps + lint and security tools
+        run: pip install -r requirements-dev.txt pip-audit  # App deps + lint and security tools
 
       - name: Lint
         run: ruff check .             # Finds bugs and bad patterns (unused imports, etc.)
