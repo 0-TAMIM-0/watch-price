@@ -1,6 +1,5 @@
 from flask import Flask, jsonify
 from flask_sqlalchemy import SQLAlchemy
-from flask_cors import CORS
 from .config import Config
 
 
@@ -12,7 +11,6 @@ def create_app():
     app.config.from_object(Config)
 
     db.init_app(app)
-    CORS(app)  # Allow Cross-Origin requests
 
     with app.app_context():
         from .models import Product, PriceHistory  # noqa: F401  (Import models for SQLAlchemy)
