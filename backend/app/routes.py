@@ -6,13 +6,15 @@ import uuid
 from flask import Blueprint, abort, current_app, jsonify, request, send_from_directory
 from sqlalchemy.exc import SQLAlchemyError
 
+from PIL import Image, UnidentifiedImageError
+
 from app import db
 from app.models import PriceHistory, Product
 
 
 logger = logging.getLogger(__name__)
 
-ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "webp"}
+ALLOWED_FORMATS = {"PNG": "png", "JPEG": "jpg", "WEBP": "webp"}
 
 api = Blueprint("api", __name__, url_prefix="/api")
 
@@ -46,20 +48,27 @@ def ready():
 
 
 def save_image(file):
-    """Validate and save an uploaded image, return its URL"""
-    ext = file.filename.rsplit(".", 1)[-1].lower() if "." in file.filename else ""
-    if ext not in ALLOWED_EXTENSIONS:
+    """Validate (by real content) and save an uploaded image, return its URL"""
+    try:
+        with Image.open(file.stream) as img:
+            img.verify()  # checks the file is a real, uncorrupted image
+            fmt = img.format
+    except (UnidentifiedImageError, OSError, SyntaxError):
+        raise ValueError("invalid image file")
+
+    if fmt not in ALLOWED_FORMATS:
         raise ValueError("unsupported file type")
+
+    file.stream.seek(0)  # verify() read the stream, go back to the start
+
+    # extension comes from the REAL format, never from the client filename
+    filename = f"{uuid.uuid4().hex}.{ALLOWED_FORMATS[fmt]}"
 
     folder = current_app.config["UPLOAD_FOLDER"]
     os.makedirs(folder, exist_ok=True)
-
-    # random name: never trust the client filename
-    filename = f"{uuid.uuid4().hex}.{ext}"
     file.save(os.path.join(folder, filename))
 
     return f"/api/uploads/{filename}"
-
 
 def delete_image(image_url):
     """Delete an uploaded image file from disk (never raise)"""
@@ -79,9 +88,9 @@ def delete_image(image_url):
 
 @api.route("/uploads/<filename>", methods=["GET"])
 def get_upload(filename):
-    """Serve an uploaded image"""
-    return send_from_directory(current_app.config["UPLOAD_FOLDER"], filename)
-
+    response = send_from_directory(current_app.config["UPLOAD_FOLDER"], filename)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    return response
 
 def validate_product_form(data):
     """Return (values, error). error is None when valid."""

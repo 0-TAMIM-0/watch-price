@@ -3,7 +3,16 @@ import os
 import json
 import pytest
 from unittest.mock import patch
+from PIL import Image
 from app.models import Product, PriceHistory
+
+
+def make_png() -> io.BytesIO:
+    """Return a valid PNG image in a BytesIO buffer for testing purposes."""
+    buf = io.BytesIO()
+    Image.new("RGB", (1, 1)).save(buf, format="PNG")
+    buf.seek(0)
+    return buf
 
 
 class TestProductRoutes:
@@ -162,7 +171,7 @@ class TestProductRoutes:
                 "name": "With Image",
                 "target_price": "100",
                 "current_price": "150",
-                "image": (io.BytesIO(b"fake"), "pic.png"),
+                "image": (make_png(), "pic.png"),
             },
             content_type="multipart/form-data",
         )
@@ -201,7 +210,7 @@ class TestProductRoutes:
                 "name": "Delete Image",
                 "target_price": "100",
                 "current_price": "150",
-                "image": (io.BytesIO(b"fake"), "pic.png"),
+                "image": (make_png(), "pic.png"),
             },
             content_type="multipart/form-data",
         ).json
@@ -220,7 +229,7 @@ class TestProductRoutes:
                 "name": "Missing Image",
                 "target_price": "100",
                 "current_price": "150",
-                "image": (io.BytesIO(b"fake"), "pic.png"),
+                "image": (make_png(), "pic.png"),
             },
             content_type="multipart/form-data",
         ).json
@@ -241,7 +250,7 @@ class TestProductRoutes:
                 "name": "Fetch Image",
                 "target_price": "100",
                 "current_price": "150",
-                "image": (io.BytesIO(b"fake"), "pic.png"),
+                "image": (make_png(), "pic.png"),
             },
             content_type="multipart/form-data",
         ).json
@@ -249,7 +258,7 @@ class TestProductRoutes:
         response = client.get(created["image_url"])
 
         assert response.status_code == 200
-        assert response.data == b"fake"
+        assert response.data.startswith(b"\x89PNG")
 
     def test_delete_product_survives_image_delete_error(self, client, db_session):
         created = client.post(
@@ -258,7 +267,7 @@ class TestProductRoutes:
                 "name": "Locked Image",
                 "target_price": "100",
                 "current_price": "150",
-                "image": (io.BytesIO(b"fake"), "pic.png"),
+                "image": (make_png(), "pic.png"),
             },
             content_type="multipart/form-data",
         ).json
@@ -306,4 +315,41 @@ class TestProductRoutes:
 
         assert response.status_code == 413
         assert response.json["error"] == "File too large (max 2MB)"
+        assert db_session.query(Product).count() == 0
+
+    def test_add_product_rejects_fake_image_content(self, client, db_session):
+        """A file named .png that is not really an image must be rejected."""
+        response = client.post(
+            "/api/products",
+            data={
+                "name": "Fake",
+                "target_price": "100",
+                "current_price": "150",
+                "image": (io.BytesIO(b"<script>alert(1)</script>"), "evil.png"),
+            },
+            content_type="multipart/form-data",
+        )
+
+        assert response.status_code == 400
+        assert db_session.query(Product).count() == 0
+
+    def test_add_product_rejects_unsupported_image_format(self, client, db_session):
+        """A real image in a disallowed format (GIF) must be rejected."""
+        buf = io.BytesIO()
+        Image.new("RGB", (1, 1)).save(buf, format="GIF")
+        buf.seek(0)
+
+        response = client.post(
+            "/api/products",
+            data={
+                "name": "Gif",
+                "target_price": "100",
+                "current_price": "150",
+                "image": (buf, "pic.png"),
+            },
+            content_type="multipart/form-data",
+        )
+
+        assert response.status_code == 400
+        assert response.json["error"] == "unsupported file type"
         assert db_session.query(Product).count() == 0
