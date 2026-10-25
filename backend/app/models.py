@@ -27,8 +27,8 @@ class Product(db.Model):
     name = db.Column(db.String(255), nullable=False)
     category = db.Column(db.String(100), nullable=True)
     image_url = db.Column(db.String(500), nullable=True)
-    target_price = db.Column(db.Float, nullable=False)
-    current_price = db.Column(db.Float, nullable=False)
+    target_price = db.Column(db.Numeric(10, 2), nullable=False)
+    current_price = db.Column(db.Numeric(10, 2), nullable=False)
     created_at = db.Column(db.DateTime(timezone=True), default=utcnow)
 
     # One-to-Many relationship: one product has many price history records
@@ -42,8 +42,8 @@ class Product(db.Model):
             "name": self.name,
             "category": self.category,
             "image_url": self.image_url,
-            "target_price": self.target_price,
-            "current_price": self.current_price,
+            "target_price": float(self.target_price),
+            "current_price": float(self.current_price),
             "target_reached": self.current_price <= self.target_price,
             "created_at": to_iso_utc(self.created_at),
         }
@@ -54,13 +54,13 @@ class PriceHistory(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     product_id = db.Column(db.Integer, db.ForeignKey("products.id"), nullable=False)
-    price = db.Column(db.Float, nullable=False)
+    price = db.Column(db.Numeric(10, 2), nullable=False)
     checked_at = db.Column(db.DateTime(timezone=True), default=utcnow)
 
     def to_dict(self):
         return {
             "id": self.id,
             "product_id": self.product_id,
-            "price": self.price,
+            "price": float(self.price),
             "checked_at": to_iso_utc(self.checked_at),
         }

@@ -84,12 +84,12 @@ const handleDelete = async () => {
                     <div class="price-box">
                         <div class="price-item">
                             <span class="label">Current Price</span>
-                            <span class="value">{{ store.product.current_price }} $</span>
+                            <span class="value">{{ store.product.current_price.toFixed(2) }} €</span>
                         </div>
                         <div class="price-item">
                             <span class="label">Target Price</span>
                             <span :class="['value', store.product.target_reached ? 'success' : 'error']">
-                                {{ store.product.target_price }} $
+                                {{ store.product.target_price.toFixed(2) }} €
                             </span>
                         </div>
                         <div class="price-item">
@@ -114,7 +114,7 @@ const handleDelete = async () => {
                         :key="history.id"
                         class="history-card"
                     >
-                        <div class="price">${{ history.price }}</div>
+                        <div class="price">{{ history.price.toFixed(2) }} €</div>
                         <div class="date">{{ formatDate(history.checked_at) }}</div>
                     </div>
                 </div>

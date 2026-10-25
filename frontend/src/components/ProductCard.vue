@@ -44,11 +44,11 @@ const formatDate = (dateString: string): string => {
             Created at: {{ formatDate(product.created_at) }}
         </div>
         <div class="product-price">
-            <div>Target price: {{ product.target_price }}</div>
+            <div>Target price: {{ product.target_price.toFixed(2) }} €</div>
             <div>
                 Current price:
                 <span :class="product.target_reached ? 'target-reached' : 'target-not-reached'">
-                    {{ product.current_price }}
+                    {{ product.current_price.toFixed(2) }} €
                 </span>
             </div>
         </div>

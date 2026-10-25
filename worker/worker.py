@@ -32,7 +32,15 @@ def fetch_products(engine: Engine) -> list[Product]:
         rows = conn.execute(
             text("SELECT id, name, current_price, target_price FROM products")
         ).mappings().all()
-    return [Product(**row) for row in rows]
+    return [
+        Product(
+            id=row["id"],
+            name=row["name"],
+            current_price=float(row["current_price"]),
+            target_price=float(row["target_price"]),
+        )
+        for row in rows
+    ]
 
 
 def update_price(engine: Engine, product_id: int, new_price: float) -> None:
