@@ -1,5 +1,6 @@
 import time
 from datetime import datetime
+from decimal import Decimal
 
 from app.models import Product, PriceHistory, to_iso_utc
 
@@ -131,7 +132,7 @@ class TestPriceHistoryModel:
 
         assert history.id is not None
         assert history.product_id == product.id
-        assert history.price == 199.99
+        assert history.price == Decimal("199.99")
         assert history.checked_at is not None
 
     def test_price_history_to_dict(self, db_session):
