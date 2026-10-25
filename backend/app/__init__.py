@@ -1,9 +1,12 @@
 from flask import Flask, jsonify
 from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
 from .config import Config
 
 
 db = SQLAlchemy()
+migrate = Migrate()
+
 
 
 def create_app():
@@ -11,11 +14,10 @@ def create_app():
     app.config.from_object(Config)
 
     db.init_app(app)
+    migrate.init_app(app, db)
 
     with app.app_context():
         from .models import Product, PriceHistory  # noqa: F401  (Import models for SQLAlchemy)
-        db.create_all()  # Create tables if they don't exist
-
         from .routes import api, health_app  # Import blueprints
 
         app.register_blueprint(api)

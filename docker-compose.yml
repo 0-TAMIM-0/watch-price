@@ -37,13 +37,14 @@ services:
       # Development: code changes auto-reload
       - ./backend/app:/app/app
       - ./backend/run.py:/app/run.py
+      - ./backend/migrations:/app/migrations
       - uploads_data:/app/uploads
     depends_on:
       postgres:
         condition: service_healthy
     networks:
       - watchprice-network
-    command: python run.py
+    command: sh -c "flask db upgrade && python run.py"
 
 
   # Price Watcher Worker

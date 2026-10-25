@@ -13,9 +13,7 @@ import os
 import tempfile
 
 # ========== ENVIRONMENT CONFIGURATION ==========
-# Set DATABASE_URL BEFORE importing app.create_app()
-# This ensures config.py uses SQLite instead of PostgreSQL (Lightweight, fast database for testing)
-os.environ["DATABASE_URL"] = "sqlite:///:memory:"
+os.environ.setdefault("DATABASE_URL", "sqlite:///:memory:")
 os.environ["SECRET_KEY"] = "test-secret-key"
 os.environ["UPLOAD_FOLDER"] = tempfile.mkdtemp()
 
