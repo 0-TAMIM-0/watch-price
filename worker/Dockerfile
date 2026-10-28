@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Copy and install requirements
 COPY requirements.txt .
-RUN pip install --no-cache-dir --user -r requirements.txt
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
 
 # Runtime stage
@@ -23,17 +23,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq5 \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy Python packages from builder
-COPY --from=builder /root/.local /root/.local
+RUN useradd -m app
 
-# Add pip to PATH
-ENV PATH=/root/.local/bin:$PATH
+# Packages go to /usr/local (readable by any user)
+COPY --from=builder /install /usr/local
 
-# Copy application code
-COPY . .
+COPY --chown=app:app . .
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
+
+USER app
 
 # Run the worker
 CMD ["python", "worker.py"]

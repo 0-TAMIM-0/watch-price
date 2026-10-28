@@ -4,8 +4,6 @@
 [![Frontend CI](https://github.com/0-TAMIM-0/watch-price/actions/workflows/frontend.yml/badge.svg?branch=main)](https://github.com/0-TAMIM-0/watch-price/actions/workflows/frontend.yml)
 
 
-**<span style="color:red;">It is not yet complete. 😢</span>**
-
 A self-hosted price monitoring platform built as a hands-on **DevOps training project** — covering the full lifecycle from local development to CI/CD, containerized deployment, and observability.
 
 ## 🎯 About This Project
@@ -14,7 +12,7 @@ This is a personal learning project built to apply real-world DevOps skills afte
 
 Instead of a simple CRUD demo, WatchPrice simulates a realistic multi-service system: users track products, a background worker continuously checks prices, and alerts are triggered when a target price is hit. The application logic is intentionally simple — the real focus is on the **infrastructure, automation, and operational practices** around it: containerization, orchestration, CI/CD pipelines, and monitoring.
 
-Product data and price changes are generated using the **Faker** library (simulated data) rather than live web scraping. This was a deliberate choice — it removes dependency on unstable third-party scraping or paid APIs, keeps the system fully self-contained and reproducible, and lets the project focus entirely on the DevOps lifecycle rather than scraping maintenance.
+Product price changes simulated using random price fluctuation rather than live web scraping. This was a deliberate choice — it removes dependency on unstable third-party scraping or paid APIs, keeps the system fully self-contained and reproducible, and lets the project focus entirely on the DevOps lifecycle rather than scraping maintenance.
 
 ## 🏗️ Architecture
 
@@ -64,7 +62,6 @@ watchprice/
 ├── frontend/          # Vue 3 + TypeScript app
 ├── backend/           # Flask API
 ├── worker/            # Price simulation service
-├── k8s/               # Kubernetes manifests
 ├── .github/workflows/ # CI/CD pipelines
 ├── docker-compose.yml
 └── README.md
@@ -74,8 +71,8 @@ watchprice/
 
 ```bash
 # Clone the repository
-git clone https://github.com/<your-username>/watchprice.git
-cd watchprice
+git clone https://github.com/0-TAMIM-0/watch-price.git
+cd watch-price
 
 # Start all services
 cp .env.example .env
