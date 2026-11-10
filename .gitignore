@@ -26,4 +26,7 @@ node_modules
 .vscode/
 files/
 
-manifest
+# ============================
+# K8S
+# ============================
+k8s/secret.yaml

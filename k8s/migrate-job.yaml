@@ -1,0 +1,44 @@
+apiVersion: batch/v1
+kind: Job
+
+metadata:
+  name: migrate
+  namespace: watchprice
+
+spec:
+  # Retry up to 4 times if it fails (e.g. postgres not ready yet)
+  backoffLimit: 4
+
+  template:
+    spec:
+      # Don't restart the pod in place; the Job creates a new one on failure
+      restartPolicy: Never
+      containers:
+        - name: migrate
+          image: ghcr.io/0-tamim-0/watchprice-backend:latest
+          # Override the image CMD: run migrations instead of gunicorn
+          command: ["flask", "db", "upgrade"]
+          env:
+            # Build DATABASE_URL from the Secret values ($(VAR) syntax)
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: watchprice-secret
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: watchprice-secret
+                  key: POSTGRES_PASSWORD
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: watchprice-secret
+                  key: POSTGRES_DB
+            - name: DATABASE_URL
+              value: postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres:5432/$(POSTGRES_DB)
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: watchprice-secret
+                  key: SECRET_KEY

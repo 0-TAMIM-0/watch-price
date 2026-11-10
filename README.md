@@ -12,7 +12,7 @@ This is a personal learning project built to apply real-world DevOps skills afte
 
 Instead of a simple CRUD demo, WatchPrice simulates a realistic multi-service system: users track products, a background worker continuously checks prices, and alerts are triggered when a target price is hit. The application logic is intentionally simple — the real focus is on the **infrastructure, automation, and operational practices** around it: containerization, orchestration, CI/CD pipelines, and monitoring.
 
-Product price changes simulated using random price fluctuation rather than live web scraping. This was a deliberate choice — it removes dependency on unstable third-party scraping or paid APIs, keeps the system fully self-contained and reproducible, and lets the project focus entirely on the DevOps lifecycle rather than scraping maintenance.
+Product price changes are simulated using random price fluctuation rather than live web scraping. This was a deliberate choice — it removes dependency on unstable third-party scraping or paid APIs, keeps the system fully self-contained and reproducible, and lets the project focus entirely on the DevOps lifecycle rather than scraping maintenance.
 
 ## 🏗️ Architecture
 
@@ -31,7 +31,7 @@ Product price changes simulated using random price fluctuation rather than live 
 
 - **Frontend** — displays tracked products and their price history
 - **Backend** — REST API for managing products and reading price data
-- **Worker** — independent service that periodically simulates price changes (via Faker) and writes to price history
+- **Worker** — independent service that periodically simulates price changes (random fluctuation) and writes to price history
 - **Database** — stores products and historical price data
 
 The backend and worker are deployed as **separate services**, each with its own Docker image and Kubernetes deployment, to reflect a realistic microservices setup.
@@ -41,7 +41,7 @@ The backend and worker are deployed as **separate services**, each with its own 
 - Add products to track with a target price
 - Automatic periodic price simulation (background worker)
 - Price history per product
-- Alert/log trigger when a product hits its target price
+- Log alert when a product hits its target price
 - Health check endpoints (`/health`, `/ready`) for readiness/liveness probes
 
 ## 🛠️ Tech Stack
@@ -58,11 +58,13 @@ The backend and worker are deployed as **separate services**, each with its own 
 ## 📁 Project Structure
 
 ```
-watchprice/
-├── frontend/          # Vue 3 + TypeScript app
-├── backend/           # Flask API
-├── worker/            # Price simulation service
-├── .github/workflows/ # CI/CD pipelines
+watch-price/
+├── frontend/             # Vue 3 + TypeScript app
+├── backend/              # Flask API
+│     └── migrations/     # Alembic database migrations
+├── worker/               # Price simulation service
+├── k8s/                  # Kubernetes manifests
+├── .github/workflows/    # CI/CD pipelines
 ├── docker-compose.yml
 └── README.md
 ```
@@ -82,18 +84,39 @@ docker compose up --build
 - Frontend: `http://localhost:3000`
 - Backend API: `http://localhost:5000`
 
+## ☸️ Running on Kubernetes
+
+Tested with Docker Desktop's built-in Kubernetes.
+
+```bash
+kubectl apply -f k8s/namespace.yaml
+cp k8s/secret.example.yaml k8s/secret.yaml   # edit the values
+kubectl apply -f k8s/secret.yaml
+kubectl apply -f k8s/postgres.yaml
+kubectl apply -f k8s/migrate-job.yaml
+kubectl apply -f k8s/configmap.yaml
+kubectl apply -f k8s/backend.yaml
+kubectl apply -f k8s/worker.yaml
+kubectl apply -f k8s/frontend.yaml
+kubectl port-forward svc/frontend 3000:3000 -n watchprice
+```
+
+- Open: `http://localhost:3000`
+
 ## 📍 Roadmap
 
 This project is being built incrementally, in phases, to reflect a realistic DevOps maturity path rather than a one-off tutorial project.
 
-**Phase 1 — Core Application (current)**
+**Phase 1 — Core Application (✅)**
 - [x] Backend API + Vue frontend + PostgreSQL
 - [x] Worker service with simulated price checks
 - [x] Dockerized services with Docker Compose
-- [x] CI pipeline: lint → test → build → push
-- [ ] Kubernetes deployment (Deployments, Services, ConfigMaps, Secrets)
+- [x] CI pipeline: lint → test → build → push to GHCR
+- [x] Database migrations (Alembic)
+- [x] Images pushed to GHCR (tagged with commit SHA)
+- [x] Kubernetes deployment (Deployments, Services, ConfigMaps, Secrets)
 
-**Phase 2 — Observability & Security**
+**Phase 2 — Observability & Security (current)**
 - [ ] Monitoring with Prometheus + Grafana
 - [ ] Centralized logging (Loki)
 - [ ] Security scanning in CI (Trivy, Dependabot)
