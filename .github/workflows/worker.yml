@@ -66,7 +66,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@v7
         with:
           context: ./worker    # Folder that contains the Dockerfile
           push: ${{ github.event_name == 'push' }}   # push on main, build-only on PRs
