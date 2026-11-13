@@ -1,0 +1,8 @@
+__pycache__
+.venv
+tests
+.coverage
+pyproject.toml
+pytest.ini
+requirements-dev.txt
+.env
