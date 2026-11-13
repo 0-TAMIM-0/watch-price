@@ -3,5 +3,5 @@ Flask-Migrate==4.1.0
 Flask-SQLAlchemy==3.1.1
 psycopg2-binary==2.9.13
 SQLAlchemy==2.0.*
-gunicorn==26.2.0
+gunicorn==27.0.0
 pillow==13.0.0
